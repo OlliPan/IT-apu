@@ -1,3 +1,5 @@
+
+import posix
 import webbrowser
 from tkinter import *
 import tkinter as tk
@@ -6,17 +8,50 @@ import os
 import subprocess
 import sys
 from win32api import GetSystemMetrics
+import socket
+import clientmodule
 LARGE_FONT=("verdana",12)
 NORM_FONT=("verdana",10)
 
-def quit():
-    quit()
+#socketin asetukset
+
+s = socket.socket()             # luodaan socket objekti
+port = 60000                    # portin varaus
+
+#Asetusten luonti
+i=open("asetukset.txt","a")
+i.close()
+lehti = open("asetukset.txt","r").read()
 
 #näytön resoluutio
 WxH=str(GetSystemMetrics(0)) + "x" + str(GetSystemMetrics(1))
 leveys=GetSystemMetrics(0)
 korkeus=GetSystemMetrics(1)
 
+#Asetus ikkuna
+
+def asetukset():
+    asetus = tk.Tk()
+    asetus.wm_title("Asetukset")
+    
+    label = ttk.Label(asetus,text="Asetukset", font=LARGE_FONT)
+    label.pack(side="top",fill="x",pady=10)
+    info = ttk.Label(asetus, text="Anna käyttämäsi lehden kotisivu", font=NORM_FONT)
+    info.pack()
+    
+    ent = Entry(asetus)
+    ent.pack()
+
+    buttok = ttk.Button(asetus , text="OK",command = lambda: tallenna())
+    buttok.pack()
+
+    def tallenna():
+                teksti=ent.get()
+                file = open("asetukset.txt","w")
+                file.write(teksti)
+                file.close()
+                asetus.destroy()
+    asetus.mainloop()
 
 class EoAapp (tk.Tk):
 
@@ -34,11 +69,13 @@ class EoAapp (tk.Tk):
         #menu
         menubar=tk.Menu(container)
         filemenu=tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Asetukset")
+        filemenu.add_command(label="Asetukset", command = lambda: asetukset())
         filemenu.add_command(label="Exit",command=quit)
         menubar.add_cascade(label="File", menu=filemenu)
 
         tk.Tk.config(self,menu=menubar)
+
+        
         
         #ikkunan lataaminen
         self.frames = {}
@@ -80,6 +117,10 @@ class StartPage(tk.Frame):
         butLehti["command"]=self.lehti
         butLehti.place(x=10,y=int(korkeus*0.95-110),height=100,width=100)
 
+        butSää = ttk.Button(self, text="Sää")
+        butSää["command"]=self.saa
+        butSää.place(x=230,y=int(korkeus*0.95-110),height=100,width=100)
+
         butRemote = ttk.Button(self, text="TARVITSETKO APUA?")
         butRemote["command"] = self.kysely
         butRemote.place(x=10,y=int(korkeus/3),height=100,width=int(leveys/2-20))
@@ -91,7 +132,11 @@ class StartPage(tk.Frame):
 
 
     def lehti(self):
-            webbrowser.open("www.iltalehti.fi/")
+            lehti = open("asetukset.txt","r").read()
+            webbrowser.open(lehti)
+
+    def saa (self):
+            webbrowser.open("http://ilmatieteenlaitos.fi/saa")
 
     #etakaytton vahvistus ikkuna
     def kysely(StartPage):
@@ -121,8 +166,11 @@ class StartPage(tk.Frame):
                 file.write(teksti)
                 file.close()
                 ikkuna.destroy()
+                clientmodule.laheta()
+                    
                 
-
+            
+            #geometriat    
         ikkuna.geometry("720x1060")
         ikkuna.maxsize(width=int(leveys/4), height=int(korkeus/3))
         ikkuna.minsize(width=int(leveys/4), height=int(korkeus/3))
